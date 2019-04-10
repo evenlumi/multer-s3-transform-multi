@@ -168,7 +168,7 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
 
     var fileStream = opts.replacementStream || file.stream
     if (transform) {
-      fileStream = transform.pipe(fileStream)
+      fileStream = fileStream.pipe(transform)
     }
 
     var params = {
