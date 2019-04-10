@@ -1,13 +1,13 @@
-# Multer S3
+# Multer S3 with stream transforms
 
 Streaming multer storage engine for AWS S3.
 
-This project is mostly an integration piece for existing code samples from Multer's [storage engine documentation](https://github.com/expressjs/multer/blob/master/StorageEngine.md) with [s3fs](https://github.com/RiptideElements/s3fs) as the substitution piece for file system.  Existing solutions I found required buffering the multipart uploads into the actual filesystem which is difficult to scale.
+This project is mostly an integration piece for existing code samples from Multer's [storage engine documentation](https://github.com/expressjs/multer/blob/master/StorageEngine.md) with [s3fs](https://github.com/RiptideElements/s3fs) as the substitution piece for file system. Existing solutions I found required buffering the multipart uploads into the actual filesystem which is difficult to scale.
 
 ## Installation
 
 ```sh
-npm install --save multer-s3
+npm install --save git+https://github.com/Aeonrush/multer-s3-with-transforms.git
 ```
 
 ## Usage
@@ -16,7 +16,7 @@ npm install --save multer-s3
 var aws = require('aws-sdk')
 var express = require('express')
 var multer = require('multer')
-var multerS3 = require('multer-s3')
+var multerS3 = require('multer-s3-with-transforms')
 
 var app = express()
 var s3 = new aws.S3({ /* ... */ })
@@ -200,6 +200,60 @@ var upload = multer({
     }
   })
 })
+```
+
+## Using transforms
+
+The `transforms` option is a function or object with field.
+
+Here is an example with simple transform as function: 
+
+```javascript
+var sharp = require('sharp')
+
+var opts = {
+    s3: s3,
+    bucket: config.originalsBucket,
+    transforms: () => sharp().resize(1920, 1080)
+      .max()
+      .withoutEnlargement()
+      .jpeg({
+        progressive: true,
+        quality: 80
+      }),
+    metadata: function (req, file, cb) {
+      cb(null, Object.assign({}, req.body));
+    },
+    key: function (req, file, cb) {
+      cb(null, req.params.id + ".jpg");
+    }
+  };
+```
+
+And here is exemple with field specific transform:
+
+```javascript
+var sharp = require('sharp')
+
+var opts = {
+    s3: s3,
+    bucket: config.originalsBucket,
+    transforms: {
+      avatar: () => sharp().resize(1920, 1080)
+        .max()
+        .withoutEnlargement()
+        .jpeg({
+          progressive: true,
+          quality: 80
+        })
+    },
+    metadata: function (req, file, cb) {
+      cb(null, Object.assign({}, req.body));
+    },
+    key: function (req, file, cb) {
+      cb(null, req.params.id + ".jpg");
+    }
+  };
 ```
 
 ## Testing

@@ -154,6 +154,8 @@ function S3Storage (opts) {
     case 'undefined': this.getSSEKMS = defaultSSEKMS; break
     default: throw new TypeError('Expected opts.sseKmsKeyId to be undefined, string, or function')
   }
+
+  this.transforms = opts.transforms
 }
 
 S3Storage.prototype._handleFile = function (req, file, cb) {
@@ -161,6 +163,13 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
     if (err) return cb(err)
 
     var currentSize = 0
+
+    var transform = !this.transforms ? null : typeof this.transforms === 'function' ? this.transforms() : this.transforms[file.fieldname]()
+
+    var fileStream = opts.replacementStream || file.stream
+    if (transform) {
+      fileStream = transform.pipe(fileStream)
+    }
 
     var params = {
       Bucket: opts.bucket,
@@ -172,7 +181,7 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
       StorageClass: opts.storageClass,
       ServerSideEncryption: opts.serverSideEncryption,
       SSEKMSKeyId: opts.sseKmsKeyId,
-      Body: (opts.replacementStream || file.stream)
+      Body: fileStream
     }
 
     if (opts.contentDisposition) {
