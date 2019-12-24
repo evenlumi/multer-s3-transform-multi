@@ -168,12 +168,12 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
       transforms = this.transforms
     }
 
-    var postTransform = function (opts, fileStream, key, _cb, _s3) {
+    var postTransform = function (opts, fileStream, suffix, _cb, _s3) {
       var currentSize = 0
     
       var params = {
         Bucket: opts.bucket,
-        Key: key,
+        Key: opts.key,
         ACL: opts.acl,
         CacheControl: opts.cacheControl,
         ContentType: opts.contentType,
@@ -203,7 +203,7 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
         _cb(null, {
           size: currentSize,
           bucket: opts.bucket,
-          key: key,
+          key: opts.key,
           acl: opts.acl,
           contentType: opts.contentType,
           contentDisposition: opts.contentDisposition,
@@ -222,9 +222,8 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
     if (transforms) {
       transforms.forEach(function(t) {
         var transformCb = t.cb()
-        var transformKey = t.key(req, file, cb)
         var transformedStream = fileStream.pipe(transformCb)
-        postTransform(opts, transformedStream, transformKey, cb, s3)
+        postTransform(opts, transformedStream, '_some_suffix', cb, s3)
       })
     } else {
       postTransform(opts, fileStream, opts.key, cb, s3)
