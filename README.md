@@ -7,7 +7,7 @@ This project is mostly an integration piece for existing code samples from Multe
 ## Installation
 
 ```sh
-npm install --save git+https://github.com/Aeonrush/multer-s3-with-transforms.git
+npm install --save git+https://github.com/evenlumi/multer-s3-transform-multi.git
 ```
 
 ## Usage
@@ -16,7 +16,7 @@ npm install --save git+https://github.com/Aeonrush/multer-s3-with-transforms.git
 var aws = require('aws-sdk')
 var express = require('express')
 var multer = require('multer')
-var multerS3 = require('multer-s3-with-transforms')
+var multerS3 = require('multer-s3-transform-multi')
 
 var app = express()
 var s3 = new aws.S3({ /* ... */ })
