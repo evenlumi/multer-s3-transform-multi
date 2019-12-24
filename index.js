@@ -216,13 +216,11 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
     var s3 = this.s3
     var fileStream = opts.replacementStream || file.stream
     if (transforms) {
+      req.files = [];
       transforms.forEach(function(t) {
         var transformCb = t.cb()
         var transformedStream = fileStream.pipe(transformCb)
         postTransform(opts, transformedStream, t.suffix, cb, s3)
-        if (!req.files) {
-          req.files = [];
-        }
         req.files.push(t.suffix + opts.key)
       })
     } else {
