@@ -168,7 +168,7 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
       transforms = this.transforms
     }
 
-    var postTransform = function (opts, fileStream, key, cb) {
+    var postTransform = function (opts, fileStream, key, cb, upload) {
       var currentSize = 0
     
       var params = {
@@ -187,8 +187,6 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
       if (opts.contentDisposition) {
         params.ContentDisposition = opts.contentDisposition
       }
-    
-      var upload = this.s3.upload(params)
     
       upload.on('httpUploadProgress', function (ev) {
         if (ev.total) currentSize = ev.total
@@ -214,15 +212,17 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
       })
     }
 
+    var upload = this.s3.upload(params)
+
     var fileStream = opts.replacementStream || file.stream
     if (transforms) {
       transforms.forEach(function(t) {
         var transformCb = t.cb()
         var transformedStream = fileStream.pipe(transformCb)
-        postTransform(opts, transformedStream, t.key, cb)
+        postTransform(opts, transformedStream, t.key, cb, upload)
       })
     } else {
-      postTransform(opts, fileStream, opts.key, cb)
+      postTransform(opts, fileStream, opts.key, cb, upload)
     }
   })
 }
