@@ -220,7 +220,7 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
     if (transforms) {
       transforms.forEach(function(t) {
         var transformCb = t.cb()
-        var transformKey = t.key()
+        var transformKey = t.key(req, file, cb)
         var transformedStream = fileStream.pipe(transformCb)
         postTransform(opts, transformedStream, transformKey, cb, s3)
       })
