@@ -223,7 +223,7 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
         if (!req.files) {
           req.files = [];
         }
-        req.files.push(suffix + opts.key)
+        req.files.push(t.suffix + opts.key)
       })
     } else {
       postTransform(opts, fileStream, '', cb, s3)
