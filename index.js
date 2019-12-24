@@ -82,52 +82,6 @@ function collect (storage, req, file, cb) {
   })
 }
 
-function postTransform (opts, fileStream, key, cb) {
-  var currentSize = 0
-
-  var params = {
-    Bucket: opts.bucket,
-    Key: key,
-    ACL: opts.acl,
-    CacheControl: opts.cacheControl,
-    ContentType: opts.contentType,
-    Metadata: opts.metadata,
-    StorageClass: opts.storageClass,
-    ServerSideEncryption: opts.serverSideEncryption,
-    SSEKMSKeyId: opts.sseKmsKeyId,
-    Body: fileStream
-  }
-
-  if (opts.contentDisposition) {
-    params.ContentDisposition = opts.contentDisposition
-  }
-
-  var upload = this.s3.upload(params)
-
-  upload.on('httpUploadProgress', function (ev) {
-    if (ev.total) currentSize = ev.total
-  })
-
-  upload.send(function (err, result) {
-    if (err) return cb(err)
-
-    cb(null, {
-      size: currentSize,
-      bucket: opts.bucket,
-      key: key,
-      acl: opts.acl,
-      contentType: opts.contentType,
-      contentDisposition: opts.contentDisposition,
-      storageClass: opts.storageClass,
-      serverSideEncryption: opts.serverSideEncryption,
-      metadata: opts.metadata,
-      location: result.Location,
-      etag: result.ETag,
-      versionId: result.VersionId
-    })
-  })
-}
-
 function S3Storage (opts) {
   switch (typeof opts.s3) {
     case 'object': this.s3 = opts.s3; break
@@ -208,21 +162,56 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
   collect(this, req, file, function (err, opts) {
     if (err) return cb(err)
 
-    var transforms = false
-    
-    if (this.transforms && this.transforms.constructor === Array) {
-      transforms = this.transforms
-    }
+    var currentSize = 0
+
+    var transform = !this.transforms ? null : typeof this.transforms === 'function' ? this.transforms() : this.transforms[file.fieldname]()
 
     var fileStream = opts.replacementStream || file.stream
-    if (transforms) {
-      transform.forEach(function(t) {
-        var transformedStream = fileStream.pipe(t.cb)
-        postTransform(opts, transformedStream, t.key, cb)
-      })
-    } else {
-      postTransform(opts, fileStream, opts.key, cb)
+    if (transform) {
+      fileStream = fileStream.pipe(transform)
     }
+
+    var params = {
+      Bucket: opts.bucket,
+      Key: opts.key,
+      ACL: opts.acl,
+      CacheControl: opts.cacheControl,
+      ContentType: opts.contentType,
+      Metadata: opts.metadata,
+      StorageClass: opts.storageClass,
+      ServerSideEncryption: opts.serverSideEncryption,
+      SSEKMSKeyId: opts.sseKmsKeyId,
+      Body: fileStream
+    }
+
+    if (opts.contentDisposition) {
+      params.ContentDisposition = opts.contentDisposition
+    }
+
+    var upload = this.s3.upload(params)
+
+    upload.on('httpUploadProgress', function (ev) {
+      if (ev.total) currentSize = ev.total
+    })
+
+    upload.send(function (err, result) {
+      if (err) return cb(err)
+
+      cb(null, {
+        size: currentSize,
+        bucket: opts.bucket,
+        key: opts.key,
+        acl: opts.acl,
+        contentType: opts.contentType,
+        contentDisposition: opts.contentDisposition,
+        storageClass: opts.storageClass,
+        serverSideEncryption: opts.serverSideEncryption,
+        metadata: opts.metadata,
+        location: result.Location,
+        etag: result.ETag,
+        versionId: result.VersionId
+      })
+    })
   })
 }
 
