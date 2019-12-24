@@ -190,10 +190,13 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
     
       var upload = _s3.upload(params)
       upload.on('httpUploadProgress', function (ev) {
+        console.log(ev);
         if (ev.total) currentSize = ev.total
       })
     
       upload.send(function (err, result) {
+        console.log('--------------- result --------------')
+        console.log(result);
         if (err) return _cb(err)
     
         _cb(null, {
