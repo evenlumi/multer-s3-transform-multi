@@ -173,7 +173,7 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
     
       var params = {
         Bucket: opts.bucket,
-        Key: opts.key,
+        Key: suffix + opts.key,
         ACL: opts.acl,
         CacheControl: opts.cacheControl,
         ContentType: opts.contentType,
@@ -190,20 +190,16 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
     
       var upload = _s3.upload(params)
       upload.on('httpUploadProgress', function (ev) {
-        console.log(ev);
         if (ev.total) currentSize = ev.total
       })
     
       upload.send(function (err, result) {
-        console.log('--------------- result --------------')
-        console.log(result);
-        console.log(err);
         if (err) return _cb(err)
     
         _cb(null, {
           size: currentSize,
           bucket: opts.bucket,
-          key: opts.key,
+          key: suffix + opts.key,
           acl: opts.acl,
           contentType: opts.contentType,
           contentDisposition: opts.contentDisposition,
@@ -223,10 +219,10 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
       transforms.forEach(function(t) {
         var transformCb = t.cb()
         var transformedStream = fileStream.pipe(transformCb)
-        postTransform(opts, transformedStream, '_some_suffix', cb, s3)
+        postTransform(opts, transformedStream, t.suffix, cb, s3)
       })
     } else {
-      postTransform(opts, fileStream, opts.key, cb, s3)
+      postTransform(opts, fileStream, '', cb, s3)
     }
   })
 }
