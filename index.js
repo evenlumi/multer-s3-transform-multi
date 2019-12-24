@@ -82,52 +82,6 @@ function collect (storage, req, file, cb) {
   })
 }
 
-function postTransform (opts, fileStream, key, cb, s3) {
-  var currentSize = 0
-
-  var params = {
-    Bucket: opts.bucket,
-    Key: key,
-    ACL: opts.acl,
-    CacheControl: opts.cacheControl,
-    ContentType: opts.contentType,
-    Metadata: opts.metadata,
-    StorageClass: opts.storageClass,
-    ServerSideEncryption: opts.serverSideEncryption,
-    SSEKMSKeyId: opts.sseKmsKeyId,
-    Body: fileStream
-  }
-
-  if (opts.contentDisposition) {
-    params.ContentDisposition = opts.contentDisposition
-  }
-
-  var upload = s3.upload(params)
-
-  upload.on('httpUploadProgress', function (ev) {
-    if (ev.total) currentSize = ev.total
-  })
-
-  upload.send(function (err, result) {
-    if (err) return cb(err)
-
-    cb(null, {
-      size: currentSize,
-      bucket: opts.bucket,
-      key: key,
-      acl: opts.acl,
-      contentType: opts.contentType,
-      contentDisposition: opts.contentDisposition,
-      storageClass: opts.storageClass,
-      serverSideEncryption: opts.serverSideEncryption,
-      metadata: opts.metadata,
-      location: result.Location,
-      etag: result.ETag,
-      versionId: result.VersionId
-    })
-  })
-}
-
 function S3Storage (opts) {
   switch (typeof opts.s3) {
     case 'object': this.s3 = opts.s3; break
@@ -212,6 +166,52 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
     
     if (this.transforms && this.transforms.constructor === Array) {
       transforms = this.transforms
+    }
+
+    var postTransform = function (opts, fileStream, key, cb, s3) {
+      var currentSize = 0
+    
+      var params = {
+        Bucket: opts.bucket,
+        Key: key,
+        ACL: opts.acl,
+        CacheControl: opts.cacheControl,
+        ContentType: opts.contentType,
+        Metadata: opts.metadata,
+        StorageClass: opts.storageClass,
+        ServerSideEncryption: opts.serverSideEncryption,
+        SSEKMSKeyId: opts.sseKmsKeyId,
+        Body: fileStream
+      }
+    
+      if (opts.contentDisposition) {
+        params.ContentDisposition = opts.contentDisposition
+      }
+    
+      var upload = s3.upload(params)
+    
+      upload.on('httpUploadProgress', function (ev) {
+        if (ev.total) currentSize = ev.total
+      })
+    
+      upload.send(function (err, result) {
+        if (err) return cb(err)
+    
+        cb(null, {
+          size: currentSize,
+          bucket: opts.bucket,
+          key: key,
+          acl: opts.acl,
+          contentType: opts.contentType,
+          contentDisposition: opts.contentDisposition,
+          storageClass: opts.storageClass,
+          serverSideEncryption: opts.serverSideEncryption,
+          metadata: opts.metadata,
+          location: result.Location,
+          etag: result.ETag,
+          versionId: result.VersionId
+        })
+      })
     }
 
     var fileStream = opts.replacementStream || file.stream
