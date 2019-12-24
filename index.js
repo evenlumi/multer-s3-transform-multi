@@ -197,6 +197,7 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
       upload.send(function (err, result) {
         console.log('--------------- result --------------')
         console.log(result);
+        console.log(err);
         if (err) return _cb(err)
     
         _cb(null, {
