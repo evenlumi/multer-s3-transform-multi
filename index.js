@@ -3,6 +3,7 @@ var stream = require('stream')
 var fileType = require('file-type')
 var isSvg = require('is-svg')
 var parallel = require('run-parallel')
+var sizeOf = require('image-size');
 
 function staticValue (value) {
   return function (req, file, cb) {
@@ -217,11 +218,13 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
     var fileStream = opts.replacementStream || file.stream
     if (transforms) {
       req.files = [];
+      req.dimensions = [];
       transforms.forEach(function(t) {
         var transformCb = t.cb()
         var transformedStream = fileStream.pipe(transformCb)
         postTransform(opts, transformedStream, t.suffix, cb, s3)
         req.files.push(t.suffix + opts.key)
+        req.dimensions.push(sizeOf(transformedStream));
       })
     } else {
       postTransform(opts, fileStream, '', cb, s3)
