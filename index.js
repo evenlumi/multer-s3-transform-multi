@@ -224,9 +224,11 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
         var transformedStream = fileStream.pipe(transformCb)
 
         const metaReader = sharp()
+
+        metaReader
           .metadata()
           .then(info => {
-            console.log(info);
+            console.log(info)
             req.meta.push(info);
           })
 
