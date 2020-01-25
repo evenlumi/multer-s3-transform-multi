@@ -228,7 +228,6 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
         metaReader
           .metadata()
           .then(info => {
-            console.log(info)
             req.meta.push(info);
           })
 
