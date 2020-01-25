@@ -3,6 +3,7 @@ var stream = require('stream')
 var fileType = require('file-type')
 var isSvg = require('is-svg')
 var parallel = require('run-parallel')
+var sharp = require('sharp')
 
 function staticValue (value) {
   return function (req, file, cb) {
@@ -217,9 +218,20 @@ S3Storage.prototype._handleFile = function (req, file, cb) {
     var fileStream = opts.replacementStream || file.stream
     if (transforms) {
       req.files = [];
+      req.meta = [];
       transforms.forEach(function(t) {
         var transformCb = t.cb()
         var transformedStream = fileStream.pipe(transformCb)
+
+        const metaReader = sharp()
+          .metadata()
+          .then(info => {
+            console.log(info);
+            req.meta.push(info);
+          })
+
+        transformedStream.pipe(metaReader);
+
         postTransform(opts, transformedStream, t.suffix, cb, s3)
         req.files.push(t.suffix + opts.key)
       })
